@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lark Player Pro</title>
+    <style>
+        /* VARIÁVEIS DO TEMA (Baseado nas suas fotos) */
+        :root {
+            --bg-main: #1a1a1a;
+            --bg-header: #222222;
+            --bg-card: #2a2a2a;
+            --bg-elevated: #333333;
+            --bg-player: #383838;
+            --text-primary: #ffffff;
+            --text-secondary: #aaaaaa;
+            --text-muted: #777777;
+            --accent-pink: #ffb6c1;
+            --accent-blue: #4da6ff;
+            --danger-red: #ff6b6b;
+            --border-color: #444444;
+            --transition-speed: 0.3s;
+        }
+
+        /* RESET E CONFIGURAÇÕES GLOBAIS */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ==========================================
+           TELA 1: PERMISSÃO INICIAL
+           ========================================== */
+        #screen-welcome {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-main);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .welcome-icon-container {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #ec4899, #8b5cf6);
+            border-radius: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(236, 72, 153, 0.3);
+        }
+
+        .welcome-icon-container svg {
+            width: 70px;
+            height: 70px;
+            fill: white;
+        }
+
+        #screen-welcome h1 {
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        #screen-welcome p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            max-width: 300px;
+            margin-bottom: 40px;
+        }
+
+        .btn-primary-large {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 16px 30px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            max-width: 320px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-primary-large:active {
+            background: var(--accent-pink);
+            color: #000;
+        }
+
+        /* ==========================================
+           TELA 2: APP PRINCIPAL (MÚSICAS)
+           ========================================== */
+        #screen-app {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+        }
+
+        /* Cabeçalho */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--bg-main);
+            z-index: 10;
+        }
+
+        .app-header h1 {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 20px;
+            font-size: 22px;
+            color: var(--text-primary);
+            cursor: pointer;
+        }
+
+        /* Abas (Tabs) */
+        .tabs-scroll {
+            display: flex;
+            gap: 12px;
+            padding: 0 20px;
+            margin-bottom: 15px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .tabs-scroll::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab-btn {
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 14px;
+            white-space: nowrap;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-blue);
+            color: var(--text-primary);
+        }
+
+        /* Barra de Busca */
+        .search-container {
+            padding: 0 20px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .search-container input {
+            width: 100%;
+            background: var(--bg-card);
+            border: none;
+            padding: 12px 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+        }
+
+        /* Lista de Músicas */
+        .music-list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 10px 180px 10px;
+        }
+
+        .music-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .music-item:active {
+            background: var(--bg-card);
+        }
+
+        .music-cover {
+            width: 55px;
+            height: 55px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 15px;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .music-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .music-title {
+            font-size: 16px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .music-artist {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .badge-letra {
+            border: 1px solid var(--text-muted);
+            border-radius: 4px;
+            padding: 1px 4px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .music-actions {
+            padding: 10px;
+            font-size: 22px;
+            color: var(--text-muted);
+            font-weight: bold;
+        }
+
+        /* ==========================================
+           MINI PLAYER FIXO
+           ========================================== */
+        #mini-player {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--bg-player);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 10px 20px 20px 20px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        .mini-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .mini-cover {
+            width: 45px;
+            height: 45px;
+            border-radius: 6px;
+            background: var(--bg-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+        }
+
+        .mini-texts {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mini-title {
+            font-size: 15px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .mini-artist {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .mini-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .mini-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .btn-play-circle {
+            background: var(--accent-pink);
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .btn-play-circle svg {
+            fill: #000;
+            width: 22px;
+            height: 22px;
+            margin-left: 3px;
+        }
+
+        /* ==========================================
+           TELA CHEIA DO PLAYER
+           ========================================== */
+        #screen-full-player {
+            position: fixed;
+            inset: 0;
+            background: #3a3a3a;
+            z-index: 500;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        #screen-full-player.active {
+            transform: translateY(0);
+        }
+
+        .fp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 24px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .fp-cover {
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: #222;
+            border-radius: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 100px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+        }
+
+        .fp-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .fp-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--accent-pink);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 85%;
+        }
+
+        .fp-artist-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+
+        .fp-progress-container {
+            width: 100%;
+            height: 5px;
+            background: #555;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .fp-progress-bar {
+            height: 100%;
+            background: var(--text-muted);
+            width: 0%;
+            border-radius: 3px;
+            position: relative;
+        }
+
+        .fp-progress-bar::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: -4px;
+            width: 13px;
+            height: 13px;
+            background: var(--accent-pink);
+            border-radius: 50%;
+        }
+
+        .fp-time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .fp-controls {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .fp-btn {
+            background: none;
+            border: none;
+            color: var(--accent-pink);
+            cursor: pointer;
+        }
+
+        .fp-btn svg {
+            width: 40px;
+            height: 40px;
+            fill: var(--accent-pink);
+        }
+
+        .fp-btn-play svg {
+            width: 75px;
+            height: 75px;
+        }
+
+        .fp-bottom-menu {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 20px;
+            margin-top: auto;
+        }
+
+        .fp-pill {
+            background: var(--bg-elevated);
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        /* ==========================================
+           MODAIS GERAIS E OVERLAYS
+           ========================================== */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 600;
+            display: none;
+        }
+
+        /* ==========================================
+           MODAL DE OPÇÕES DA MÚSICA
+           ========================================== */
+        #modal-options {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--bg-elevated);
+            border-top-left-radius: 25px;
+            border-top-right-radius: 25px;
+            z-index: 700;
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        #modal-options.active {
+            transform: translateY(0);
+        }
+
+        .options-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .options-header .music-cover {
+            width: 60px;
+            height: 60px;
+        }
+
+        .options-list {
+            list-style: none;
+        }
+
+        .options-list li {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .options-list li:last-child {
+            border-bottom: none;
+        }
+
+        .options-list li.delete {
+            color: var(--danger-red);
+        }
+          /* ==========================================
+           MODAL DA FILA (PLAYLIST)
+           ========================================== */
+        #modal-queue {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-card);
+            z-index: 800;
+            display: none;
+            flex-direction: column;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        #modal-queue.active {
+            display: flex;
+            transform: translateY(0);
+        }
+
+        .queue-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .queue-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px 20px 100px 20px;
+        }
+
+        .queue-list .music-item {
+            justify-content: space-between;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .queue-list .music-title {
+            color: var(--accent-pink);
+        }
+
+        .queue-footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 20px;
+            background: var(--bg-card);
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .q-btn {
+            background: var(--bg-elevated);
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 20px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .q-btn.active {
+            background: var(--accent-pink);
+            color: #000;
+        }
+
+        /* ==========================================
+           MODAL DE CONFIGURAÇÕES
+           ========================================== */
+        #modal-settings {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-main);
+            z-index: 900;
+            display: none;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        #modal-settings.active {
+            display: flex;
+            transform: translateX(0);
+        }
+
+        .settings-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .settings-group {
+            background: var(--bg-card);
+            border-radius: 15px;
+            margin: 0 20px 20px 20px;
+            padding: 5px 20px;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 16px;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-item span {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .settings-icon {
+            color: var(--text-secondary);
+            margin-right: 15px;
+            font-size: 20px;
+        }
+
+        /* ==========================================
+           TELA DE VÍDEOS (MOCK)
+           ========================================== */
+        #screen-videos {
+            display: none;
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: var(--text-muted);
+        }
+
+        #screen-videos p {
+            margin-top: 10px;
+        }
+
+        /* ==========================================
+           TELA DE PLAYLISTS (MOCK)
+           ========================================== */
+        #screen-playlists {
+            display: none;
+            flex: 1;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: var(--text-muted);
+        }
+
+        #screen-playlists p {
+            margin-top: 10px;
+        }
+
+        /* ==========================================
+           SLEEP TIMER MODAL
+           ========================================== */
+        #modal-timer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--bg-elevated);
+            border-top-left-radius: 25px;
+            border-top-right-radius: 25px;
+            z-index: 700;
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        #modal-timer.active {
+            transform: translateY(0);
+        }
+
+        .timer-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .timer-option-btn {
+            background: var(--bg-card);
+            border: none;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* ==========================================
+           TELA DE LETRAS (MOCK)
+           ========================================== */
+        #screen-lyrics {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-main);
+            z-index: 800;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        #screen-lyrics.active {
+            display: flex;
+            transform: translateY(0);
+        }
+
+        .lyrics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            font-size: 20px;
+        }
+
+        .lyrics-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 18px;
+            line-height: 2;
+        }
+
+        /* ==========================================
+           SCROLLBAR CUSTOMIZADA
+           ========================================== */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TELA 1: BOAS VINDAS (PERMISSÃO) -->
+    <div id="screen-welcome">
+        <div class="welcome-icon-container">
+            <svg viewBox="0 0 24 24">
+                <path d="M12 3a9 9 0 0 0-9 9v5a3 3 0 0 0 3 3h2v-8H5v-1a7 7 0 0 1 14 0v1h-3v8h2a3 3 0 0 0 3-3v-5a9 9 0 0 0-9-9z"/>
+            </svg>
+        </div>
+        <h1>Lark Player Pro</h1>
+        <p>Permita que o aplicativo acesse a mídia no seu dispositivo para procurar os arquivos MP3.</p>
+        <button class="btn-primary-large" id="btn-grant-permission">PERMITIR E PROCURAR MÚSICAS</button>
+    </div>
+
+    <!-- TELA 2: APP PRINCIPAL -->
+    <div id="screen-app">
+        <div class="app-header">
+            <h1>Lark Player</h1>
+            <div class="header-actions">
+                <span id="action-search">🔍</span>
+                <span id="action-settings">⚙️</span>
+            </div>
+        </div>
+
+        <div class="tabs-scroll">
+            <button class="tab-btn" id="tab-videos">▶ Vídeos</button>
+            <button class="tab-btn active" id="tab-musics">Músicas</button>
+            <button class="tab-btn" id="tab-playlists">Playlists</button>
+        </div>
+
+        <div class="search-container" id="search-bar-container">
+            <input type="text" id="input-search" placeholder="Pesquisar música...">
+        </div>
+
+        <div id="screen-musics" class="music-list-container">
+            <!-- Lista gerada via JS -->
+        </div>
+
+        <div id="screen-videos">
+            <span style="font-size: 50px;">🎬</span>
+            <p>Nenhum vídeo encontrado</p>
+        </div>
+
+        <div id="screen-playlists">
+            <span style="font-size: 50px;">📁</span>
+            <p>Nenhuma playlist criada</p>
+        </div>
+
+        <!-- MINI PLAYER -->
+        <div id="mini-player">
+            <div class="mini-left" id="mini-click-area">
+                <div class="mini-cover">🎵</div>
+                <div class="mini-texts">
+                    <div class="mini-title" id="mini-title">Nenhuma música</div>
+                    <div class="mini-artist" id="mini-artist">Artista Desconhecido</div>
+                </div>
+            </div>
+            <div class="mini-controls">
+                <button class="mini-btn" id="mini-btn-prev">⏮</button>
+                <button class="btn-play-circle" id="mini-btn-play">
+                    <svg viewBox="0 0 24 24" id="mini-icon-play"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <button class="mini-btn" id="mini-btn-next">⏭</button>
+            </div>
+        </div>
+    </div>
+  <!-- TELA 3: PLAYER CHEIO -->
+<div id="screen-full-player">
+    <div class="fp-header">
+        <span id="fp-close">▼</span>
+        <span id="fp-menu-btn">⋮</span>
+    </div>
+
+    <div class="fp-cover">🎵</div>
+
+    <div class="fp-title-row">
+        <div class="fp-title" id="fp-title">Título</div>
+        <div style="font-size: 26px; color: var(--accent-pink);" id="fp-fav-btn">♡</div>
+    </div>
+
+    <div class="fp-artist-row">
+        <div id="fp-artist">Artista</div>
+        <div style="font-size: 24px; color: var(--text-secondary);" id="fp-options-btn">⋮</div>
+    </div>
+
+    <div class="fp-progress-container" id="fp-progress-bg">
+        <div class="fp-progress-bar" id="fp-progress"></div>
+    </div>
+    <div class="fp-time">
+        <span id="fp-time-curr">0:00</span>
+        <span id="fp-time-total">0:00</span>
+    </div>
+
+    <div class="fp-controls">
+        <button class="fp-btn" id="fp-prev"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
+        <button class="fp-btn fp-btn-play" id="fp-play">
+            <svg viewBox="0 0 24 24" id="fp-icon-play"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="fp-btn" id="fp-next"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>
+    </div>
+
+    <div class="fp-bottom-menu">
+        <span id="fp-lyrics-btn" style="cursor: pointer;">🎤</span>
+        <div class="fp-pill" id="fp-queue-btn">[موسيقى] Fila</div>
+        <span id="fp-sleep-btn" style="cursor: pointer;">⏲</span>
+    </div>
+</div>
+
+<!-- OVERLAY GLOBAL -->
+<div class="overlay" id="global-overlay"></div>
+
+<!-- MODAL: OPÇÕES DA MÚSICA -->
+<div id="modal-options">
+    <div class="options-header">
+        <div class="music-cover">🎵</div>
+        <div>
+            <h3 id="opt-title" style="margin-bottom: 4px;">Música</h3>
+            <p id="opt-artist" style="font-size: 13px; color: var(--text-secondary);">Rubikdice, Chilx, WAA</p>
+        </div>
+    </div>
+    <ul class="options-list">
+        <li>☰ Adicionar à Playlist</li>
+        <li>➦ Compartilhar</li>
+        <li>⏱ Velocidade</li>
+        <li>🔔 Definir como toque</li>
+        <li>⏲ Timer</li>
+        <li>🔋 Modo de economia de energia</li>
+        <li>👁 Esconder</li>
+        <li class="delete">🗑 Excluir</li>
+    </ul>
+</div>
+
+<!-- MODAL: FILA -->
+<div id="modal-queue">
+    <div class="queue-header">
+        <h2>Fila</h2>
+        <div style="font-size: 20px; color: var(--text-muted);">
+            <span style="margin-right: 15px;">⏺</span>
+            <span id="queue-close" style="cursor: pointer;">✕</span>
+        </div>
+    </div>
+    <div class="queue-list" id="queue-list">
+        <!-- Lista gerada via JS -->
+    </div>
+    <div class="queue-footer">
+        <div class="q-btn active">🔁</div>
+        <div class="q-btn">🔂</div>
+        <div class="q-btn">🔀</div>
+    </div>
+</div>
+
+<!-- MODAL: CONFIGURAÇÕES -->
+<div id="modal-settings">
+    <div class="settings-header">
+        <span id="settings-close" style="cursor: pointer;">&lt;</span> Configurações
+    </div>
+    
+    <div class="settings-group">
+        <div class="settings-item">
+            <div style="display: flex; align-items: center;">
+                <span class="settings-icon">☁️</span> Fazer backup e restaurar
+            </div>
+            <span>Login &gt;</span>
+        </div>
+    </div>
+
+    <div class="settings-group">
+        <div class="settings-item">
+            <div style="display: flex; align-items: center;">
+                <span class="settings-icon">👕</span> Tema
+            </div>
+            <span>Clássico &gt;</span>
+        </div>
+        <div class="settings-item">
+            <div style="display: flex; align-items: center;">
+                <span class="settings-icon">⏲</span> Timer
+            </div>
+            <span>Desligado &gt;</span>
+        </div>
+        <div class="settings-item">
+            <div style="display: flex; align-items: center;">
+                <span class="settings-icon">🅰️</span> Remover Anúncios
+            </div>
+            <span>&gt;</span>
+        </div>
+    </div>
+
+    <div class="settings-group">
+        <div class="settings-item">
+            <div style="display: flex; align-items: center;">
+                <span class="settings-icon">👁</span> Arquivos ocultos
+            </div>
+            <span>0 arquivos &gt;</span>
+        </div>
+        <div class="settings-item">
+            <div style="display: flex; align-items: center;">
+                <span class="settings-icon">🗑</span> Excluído recentemente
+            </div>
+            <span>0 arquivo &gt;</span>
+        </div>
+        <div class="settings-item">
+            <div style="display: flex; align-items: center;">
+                <span class="settings-icon">🎧</span> Configurações de reprodução
+            </div>
+            <span>&gt;</span>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: SLEEP TIMER -->
+<div id="modal-timer">
+    <div class="options-header" style="border: none; padding-bottom: 0;">
+        <h3 style="font-size: 20px;">Sleep Timer</h3>
+    </div>
+    <div class="timer-options">
+        <button class="timer-option-btn">Desligar em 5 minutos</button>
+        <button class="timer-option-btn">Desligar em 10 minutos</button>
+        <button class="timer-option-btn">Desligar em 15 minutos</button>
+        <button class="timer-option-btn">Desligar em 30 minutos</button>
+        <button class="timer-option-btn" style="color: var(--danger-red);">Desativar</button>
+    </div>
+</div>
+
+<!-- TELA: LETRAS -->
+<div id="screen-lyrics">
+    <div class="lyrics-header">
+        <span id="lyrics-close" style="cursor: pointer;">&lt;</span>
+        <span>Letras</span>
+    </div>
+    <div class="lyrics-content">
+        <p>A letra desta música não está disponível.</p>
+        <p style="margin-top: 20px; font-size: 14px; color: var(--text-muted);">As letras sincronizadas aparecerão aqui.</p>
+    </div>
+</div>
+
+<!-- O elemento de áudio real (escondido) -->
+<audio id="audio-element"></audio>
+
+<!-- O input de arquivos escondido (MOTOR DE PERMISSÃO) -->
+<input type="file" id="file-input" webkitdirectory directory multiple accept="audio/*" style="display: none;">
+          <script>
+        // ==========================================
+        // 1. VARIÁVEIS GLOBAIS E ELEMENTOS DO DOM
+        // ==========================================
+        const $ = (id) => document.getElementById(id);
+        
+        // Telas
+        const screenWelcome = $('screen-welcome');
+        const screenApp = $('screen-app');
+        const screenFullPlayer = $('screen-full-player');
+        const screenLyrics = $('screen-lyrics');
+        
+        // Listas e Textos
+        const listContainer = $('screen-musics');
+        const queueListContainer = $('queue-list');
+        const miniPlayer = $('mini-player');
+        const audio = $('audio-element');
+        const fileInput = $('file-input');
+        
+        // Textos Mini Player
+        const miniTitle = $('mini-title');
+        const miniArtist = $('mini-artist');
+        
+        // Textos Player Cheio
+        const fpTitle = $('fp-title');
+        const fpArtist = $('fp-artist');
+        const fpProgress = $('fp-progress');
+        const fpTimeCurr = $('fp-time-curr');
+        const fpTimeTotal = $('fp-time-total');
+        
+        // Modais
+        const modalOptions = $('modal-options');
+        const modalQueue = $('modal-queue');
+        const modalSettings = $('modal-settings');
+        const modalTimer = $('modal-timer');
+        const globalOverlay = $('global-overlay');
+        
+        // Ícones Play/Pause
+        const iconMiniPlay = $('mini-icon-play');
+        const iconFpPlay = $('fp-icon-play');
+        
+        // Variáveis de Estado
+        let playlist = [];
+        let currentIndex = 0;
+        let isPlaying = false;
+        let db;
+        let sleepTimerId = null;
+        let isFavorite = false;
+        
+        // SVGs para troca de ícone
+        const SVG_PLAY = `<path d="M8 5v14l11-7z"/>`;
+        const SVG_PAUSE = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`;
+
+        // ==========================================
+        // 2. INICIALIZAÇÃO DO BANCO DE DADOS (OFFLINE)
+        // ==========================================
+        function initDB() {
+            const req = indexedDB.open("LarkPlayerDBPro", 1);
+            
+            req.onupgradeneeded = (e) => {
+                db = e.target.result;
+                if (!db.objectStoreNames.contains('musicas')) {
+                    db.createObjectStore('musicas', { keyPath: 'id', autoIncrement: true });
+                }
+            };
+            
+            req.onsuccess = (e) => {
+                db = e.target.result;
+                carregarMusicasDoBanco(); // Tenta carregar músicas ao abrir
+            };
+            
+            req.onerror = (e) => {
+                console.error("Erro ao abrir banco de dados: " + e.target.errorCode);
+            };
+        }
+
+        // ==========================================
+        // 3. SISTEMA DE PERMISSÃO E CARREGAMENTO
+        // ==========================================
+        $('btn-grant-permission').addEventListener('click', () => {
+            // Essa função abre a tela nativa do Android (O que o usuário chama de permissão)
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files).filter(f => f.type.startsWith('audio/'));
+            
+            if (files.length === 0) {
+                alert("Nenhum arquivo de áudio (MP3) encontrado na pasta selecionada.");
+                return;
+            }
+
+            let processados = 0;
+            const total = files.length;
+            
+            // Feedback visual na tela inicial
+            $('btn-grant-permission').innerText = "Processando... 0%";
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                
+                reader.onload = (event) => {
+                    const tx = db.transaction('musicas', 'readwrite');
+                    const store = tx.objectStore('musicas');
+                    
+                    store.add({ 
+                        nome: file.name, 
+                        buffer: event.target.result 
+                    });
+                    
+                    processados++;
+                    $('btn-grant-permission').innerText = `Processando... ${Math.round((processados/total)*100)}%`;
+                    
+                    if (processados === total) {
+                        setTimeout(() => {
+                            alert('Músicas carregadas e salvas no aplicativo com sucesso!');
+                            carregarMusicasDoBanco();
+                        }, 500);
+                    }
+                };
+                
+                reader.readAsArrayBuffer(file);
+            });
+            
+            fileInput.value = ''; // Limpa o input
+        });
+
+        // ==========================================
+        // 4. CARREGAR MÚSICAS DO BANCO
+        // ==========================================
+        function carregarMusicasDoBanco() {
+            playlist = [];
+            const tx = db.transaction('musicas', 'readonly');
+            const store = tx.objectStore('musicas');
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                playlist = req.result;
+                
+                if (playlist.length > 0) {
+                    screenWelcome.style.display = 'none';
+                    screenApp.style.display = 'flex';
+                    miniPlayer.style.display = 'flex';
+                    
+                    renderizarListaPrincipal();
+                    renderizarFila();
+                    
+                    if (!audio.src) {
+                        prepararMusica(0);
+                    }
+                } else {
+                    screenWelcome.style.display = 'flex';
+                    screenApp.style.display = 'none';
+                    $('btn-grant-permission').innerText = "PERMITIR E PROCURAR MÚSICAS";
+                }
+            };
+        }
+
+        // ==========================================
+        // 5. RENDERIZAÇÃO DAS LISTAS
+        // ==========================================
+        function renderizarListaPrincipal(filtro = '') {
+            listContainer.innerHTML = '';
+            
+            playlist.forEach((musica, index) => {
+                const title = musica.nome.replace(/\.[^/.]+$/, ""); // Remove extensão .mp3
+                
+                // Se houver filtro de busca, pula as que não batem
+                if (filtro && !title.toLowerCase().includes(filtro.toLowerCase())) return;
+
+                const item = document.createElement('div');
+                item.className = 'music-item';
+                item.innerHTML = `
+                    <div class="music-cover">🎵</div>
+                    <div class="music-info">
+                        <div class="music-title">${title}</div>
+                        <div class="music-artist">
+                            <span class="badge-letra">LETRA</span> Rubikdice, Chilx, WAA
+                        </div>
+                    </div>
+                    <div class="music-actions" onclick="event.stopPropagation(); abrirOpcoesMusica(${index})">⋮</div>
+                `;
+                
+                item.onclick = () => tocarMusica(index);
+                listContainer.appendChild(item);
+            });
+        }
+
+        function renderizarFila() {
+            queueListContainer.innerHTML = '';
+            playlist.forEach((musica, index) => {
+                const title = musica.nome.replace(/\.[^/.]+$/, "");
+                const item = document.createElement('div');
+                item.className = 'music-item';
+                
+                item.innerHTML = `
+                    <div class="music-cover" style="width:45px; height:45px; font-size:18px;">🎵</div>
+                    <div class="music-info" style="margin-left:10px;">
+                        <div class="music-title" style="color:${index === currentIndex ? 'var(--accent-pink)' : 'white'};">${title}</div>
+                        <div class="music-artist"><span class="badge-letra">LETRA</span> Rubikdice, Chilx, WAA - MONTAG...</div>
+                    </div>
+                    <div style="color: var(--text-muted); font-size: 24px;">☰</div>
+                `;
+                
+                item.onclick = () => tocarMusica(index);
+                queueListContainer.appendChild(item);
+            });
+        }
+
+        // ==========================================
+        // 6. CONTROLES DE REPRODUÇÃO E ÁUDIO
+        // ==========================================
+        function prepararMusica(index) {
+            if (index < 0 || index >= playlist.length) return;
+            
+            currentIndex = index;
+            const musica = playlist[currentIndex];
+            
+            // Cria um URL virtual para o arquivo salvo em Blob/Buffer
+            const blob = new Blob([musica.buffer], { type: 'audio/mp3' });
+            
+            // Limpa memória antiga
+            if (audio.src) URL.revokeObjectURL(audio.src);
+            
+            audio.src = URL.createObjectURL(blob);
+            
+            // Atualiza textos na tela
+            const title = musica.nome.replace(/\.[^/.]+$/, "");
+            miniTitle.innerText = title;
+            fpTitle.innerText = title;
+            
+            // Reseta o coração (favorito)
+            isFavorite = false;
+            $('fp-fav-btn').innerText = '♡';
+            $('fp-fav-btn').style.color = 'var(--text-secondary)';
+            
+            renderizarFila();
+        }
+
+        function tocarMusica(index) {
+            prepararMusica(index);
+            audio.play().then(() => {
+                isPlaying = true;
+                atualizarIconesPlay();
+            }).catch(err => alert("Erro ao tocar: " + err));
+        }
+
+        function togglePlayPause() {
+            if (!audio.src) return;
+            
+            if (audio.paused) {
+                audio.play();
+                isPlaying = true;
+            } else {
+                audio.pause();
+                isPlaying = false;
+            }
+            atualizarIconesPlay();
+        }
+
+        function atualizarIconesPlay() {
+            const svg = isPlaying ? SVG_PAUSE : SVG_PLAY;
+            iconMiniPlay.innerHTML = svg;
+            iconFpPlay.innerHTML = svg;
+        }
+
+        function proximaMusica() {
+            let nextIndex = (currentIndex + 1) % playlist.length;
+            tocarMusica(nextIndex);
+        }
+
+        function musicaAnterior() {
+            // Se estiver tocando há mais de 3 segundos, volta ao início. Se não, vai para a anterior.
+            if (audio.currentTime > 3) {
+                audio.currentTime = 0;
+            } else {
+                let prevIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+                tocarMusica(prevIndex);
+            }
+        }
+
+        // Eventos de botões de áudio
+        $('mini-btn-play').onclick = (e) => { e.stopPropagation(); togglePlayPause(); };
+        $('fp-play').onclick = togglePlayPause;
+        $('mini-btn-next').onclick = (e) => { e.stopPropagation(); proximaMusica(); };
+        $('fp-next').onclick = proximaMusica;
+        $('mini-btn-prev').onclick = (e) => { e.stopPropagation(); musicaAnterior(); };
+        $('fp-prev').onclick = musicaAnterior;
+        
+        audio.addEventListener('ended', proximaMusica);
+
+        // ==========================================
+        // 7. BARRA DE PROGRESSO
+        // ==========================================
+        function formatarTempo(segundos) {
+            if (isNaN(segundos)) return "0:00";
+            const m = Math.floor(segundos / 60);
+            const s = Math.floor(segundos % 60);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        audio.addEventListener('timeupdate', () => {
+            if (audio.duration) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                fpProgress.style.width = `${percent}%`;
+                fpTimeCurr.innerText = formatarTempo(audio.currentTime);
+                fpTimeTotal.innerText = formatarTempo(audio.duration);
+            }
+        });
+
+        $('fp-progress-bg').addEventListener('click', (e) => {
+            const width = e.currentTarget.clientWidth;
+            const clickX = e.offsetX;
+            if (audio.duration) {
+                audio.currentTime = (clickX / width) * audio.duration;
+            }
+        });
+
+        // ==========================================
+        // 8. NAVEGAÇÃO ENTRE TELAS E MODAIS
+        // ==========================================
+        
+        // Abrir / Fechar Player Cheio
+        $('mini-click-area').onclick = () => {
+            screenFullPlayer.style.display = 'flex';
+            setTimeout(() => screenFullPlayer.classList.add('active'), 10);
+            miniPlayer.style.display = 'none';
+        };
+
+        $('fp-close').onclick = () => {
+            screenFullPlayer.classList.remove('active');
+            setTimeout(() => screenFullPlayer.style.display = 'none', 300);
+            miniPlayer.style.display = 'flex';
+        };
+
+        // Abrir Modais (Opções, Fila, Config)
+        window.abrirOpcoesMusica = (index) => {
+            const title = playlist[index].nome.replace(/\.[^/.]+$/, "");
+            $('opt-title').innerText = title;
+            
+            globalOverlay.style.display = 'block';
+            modalOptions.classList.add('active');
+        };
+
+        $('fp-options-btn').onclick = () => abrirOpcoesMusica(currentIndex);
+        $('fp-menu-btn').onclick = () => abrirOpcoesMusica(currentIndex);
+
+        window.fecharModais = () => {
+            globalOverlay.style.display = 'none';
+            modalOptions.classList.remove('active');
+            modalTimer.classList.remove('active');
+        };
+
+        globalOverlay.onclick = fecharModais;
+
+        // Fila
+        $('fp-queue-btn').onclick = () => {
+            modalQueue.classList.add('active');
+        };
+        $('queue-close').onclick = () => {
+            modalQueue.classList.remove('active');
+        };
+
+        // Configurações
+        $('action-settings').onclick = () => {
+            modalSettings.classList.add('active');
+        };
+        $('settings-close').onclick = () => {
+            modalSettings.classList.remove('active');
+        };
+
+        // Timer (Sleep Timer)
+        $('fp-sleep-btn').onclick = () => {
+            globalOverlay.style.display = 'block';
+            modalTimer.classList.add('active');
+        };
+
+        // Simulação de Timer
+        document.querySelectorAll('.timer-option-btn').forEach(btn => {
+            btn.onclick = () => {
+                fecharModais();
+                if (btn.innerText.includes("Desativar")) {
+                    if (sleepTimerId) clearTimeout(sleepTimerId);
+                    alert("Timer desativado.");
+                } else {
+                    const minutos = parseInt(btn.innerText.match(/\d+/)[0]);
+                    if (sleepTimerId) clearTimeout(sleepTimerId);
+                    sleepTimerId = setTimeout(() => {
+                        audio.pause();
+                        isPlaying = false;
+                        atualizarIconesPlay();
+                        alert("Timer encerrado. Música pausada.");
+                    }, minutos * 60000);
+                    alert(`O player vai pausar em ${minutos} minutos.`);
+                }
+            };
+        });
+
+        // Favoritos
+        $('fp-fav-btn').onclick = () => {
+            isFavorite = !isFavorite;
+            $('fp-fav-btn').innerText = isFavorite ? '♥' : '♡';
+            $('fp-fav-btn').style.color = isFavorite ? 'var(--accent-pink)' : 'var(--text-secondary)';
+        };
+
+        // Letras
+        $('fp-lyrics-btn').onclick = () => {
+            screenLyrics.classList.add('active');
+        };
+        $('lyrics-close').onclick = () => {
+            screenLyrics.classList.remove('active');
+        };
+
+        // ==========================================
+        // 9. CONTROLE DE ABAS (Músicas, Vídeos, Playlists)
+        // ==========================================
+        const tabMusics = $('tab-musics');
+        const tabVideos = $('tab-videos');
+        const tabPlaylists = $('tab-playlists');
+        
+        const viewMusics = $('screen-musics');
+        const viewVideos = $('screen-videos');
+        const viewPlaylists = $('screen-playlists');
+
+        function resetarAbas() {
+            tabMusics.classList.remove('active');
+            tabVideos.classList.remove('active');
+            tabPlaylists.classList.remove('active');
+            
+            viewMusics.style.display = 'none';
+            viewVideos.style.display = 'none';
+            viewPlaylists.style.display = 'none';
+        }
+
+        tabMusics.onclick = () => {
+            resetarAbas();
+            tabMusics.classList.add('active');
+            viewMusics.style.display = 'block';
+        };
+
+        tabVideos.onclick = () => {
+            resetarAbas();
+            tabVideos.classList.add('active');
+            viewVideos.style.display = 'flex';
+        };
+
+        tabPlaylists.onclick = () => {
+            resetarAbas();
+            tabPlaylists.classList.add('active');
+            viewPlaylists.style.display = 'flex';
+        };
+
+        // ==========================================
+        // 10. BARRA DE BUSCA
+        // ==========================================
+        const searchContainer = $('search-bar-container');
+        const inputSearch = $('input-search');
+
+        $('action-search').onclick = () => {
+            if (searchContainer.style.display === 'block') {
+                searchContainer.style.display = 'none';
+                inputSearch.value = '';
+                renderizarListaPrincipal(); // Reseta a lista
+            } else {
+                searchContainer.style.display = 'block';
+                inputSearch.focus();
+            }
+        };
+
+        inputSearch.addEventListener('input', (e) => {
+            renderizarListaPrincipal(e.target.value);
+        });
+
+        // ==========================================
+        // 11. INICIALIZAÇÃO FINAL
+        // ==========================================
+        // Chama a função do banco de dados assim que a página carregar
+        window.onload = initDB;
+
+    </script>
+</body>
+  </html>            
